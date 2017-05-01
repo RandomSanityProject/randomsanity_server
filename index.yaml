@@ -1,0 +1,6 @@
+indexes:
+
+- kind: NotifyViaEmail
+  properties:
+  - name: UserId
+  - name: Address

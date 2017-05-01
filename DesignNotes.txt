@@ -1,0 +1,32 @@
+An infinite number of heuristic/statistical tests could be added; I
+will be much more likely to consider pull requests that add more if
+you can point to somebody else's code on github that screws up
+pseudorandom number generation in a way that your code catches.
+
+The first rough implementation of the duplication detection used a
+really big bloom filter with a very small false positive rate. That
+was fun to code, but it added a lot of complication and was only three
+or four times smaller on disk than the more straightforward solution
+using AppEngine's key/value store.
+
+The performance bottleneck is datastore reads for the duplication
+detection. Testing a 64-byte byte array is 48 reads (and 2 writes).
+If this service becomes very popular and AppEngine costs become an
+issue that is the first place to optimize.
+
+I've done some preliminary testing and benchmarking of an algorithm
+that uses 6 reads and 3 writes but sacrifices detection if the byte
+arrays overlap in fewer than 32 bytes.
+
+
+Possible future work, if there is demand:
+
+Public keys should be globally unique and look random. A tool that
+finds all the public keys on a system and submits them would be
+useful. It would be even more useful if you could safely run the
+tool twice and not get false-positive reports of non-uniqueness
+(if the query was tagged with the name or IP of the machine the
+server could ignore duplicates with the same tag).
+
+
+
