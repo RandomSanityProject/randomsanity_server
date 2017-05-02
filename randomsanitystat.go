@@ -115,6 +115,20 @@ func BitStuck(b []byte) (bool, uint) {
 	return false, 0
 }
 
+// DecimalHex detects confusing decimal and hex (no A-F hex digits)
+func DecimalHex(b []byte) bool {
+	// ... need 45 or more bytes (89 or more digits) to be over the 2^60 fp rate...
+	if len(b) < 45 {
+		return false
+	}
+	for i := 0; i < len(b); i++ {
+		if ((b[i] >> 4) >= 10) || ((b[i] & 0x0f) >= 10) {
+			return false
+		}
+	}
+	return true
+}
+
 // LooksRandom returns true and an empty string if b passes all
 // the tests; otherwise it returns false and a short string describing
 // which test failed.
@@ -124,6 +138,9 @@ func LooksRandom(b []byte) (bool, string) {
 	}
 	if Counting(b) {
 		return false, "Counting"
+	}
+	if DecimalHex(b) {
+		return false, "Decimal digits as hex"
 	}
 	stuck, _ := BitStuck(b)
 	if stuck {
