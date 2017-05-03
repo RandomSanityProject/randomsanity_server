@@ -22,6 +22,9 @@ func init() {
 	// Remove an id token
 	http.HandleFunc("/v1/unregister/", unRegisterIDHandler)
 
+	// Get usage stats
+	http.HandleFunc("/v1/usage", usageHandler)
+
 	// Development/testing...
 	http.HandleFunc("/v1/debug", debugHandler)
 
@@ -39,7 +42,6 @@ func debugHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/plain")
 
 	// Code useful for development/testing:
-
 	//	fmt.Fprint(w, "***r.Header headers***\n")
 	//	r.Header.Write(w)
 
