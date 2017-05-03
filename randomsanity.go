@@ -31,7 +31,7 @@ func init() {
 			http.NotFound(w, r)
 			return
 		}
-		http.Redirect(w, r, "http://www.randomsanity.org/", 301)
+		http.Redirect(w, r, "https://www.randomsanity.org/", 301)
 	})
 }
 
