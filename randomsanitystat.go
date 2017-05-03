@@ -94,25 +94,24 @@ func Repeated(b []byte) bool {
 	return false
 }
 
-// BitStuck returns true and which bit is stuck if b contains
-// long runs of bytes with the same bit set or unset
-func BitStuck(b []byte) (bool, uint) {
+// BitStuck returns true if a bit in b is always set or unset
+// (and b is 64 or more bytes long)
+func BitStuck(b []byte) bool {
 	if len(b) < 64 {
-		return false, 0
+		return false
 	}
-	// Create a new byte array with all the low bits,
-	// etc. Then use Repeated to look for runs of
-	// zero or one.
-	for bit := uint(0); bit < uint(8); bit++ {
-		bb := make([]byte, (len(b)+7)/8)
-		for i, v := range b {
-			bb[i/8] |= ((v >> bit) & 0x01) << uint(i%8)
-		}
-		if Repeated(bb) {
-			return true, bit
-		}
+
+	allOr := byte(0)
+	allAnd := byte(0xff)
+
+	for _, v := range b {
+		allOr |= v
+		allAnd &= v
 	}
-	return false, 0
+	if allOr != 0xff || allAnd != 0x0 {
+		return true
+	}
+	return false
 }
 
 // DecimalHex detects confusing decimal and hex (no A-F hex digits)
@@ -142,8 +141,7 @@ func LooksRandom(b []byte) (bool, string) {
 	if DecimalHex(b) {
 		return false, "Decimal digits as hex"
 	}
-	stuck, _ := BitStuck(b)
-	if stuck {
+	if BitStuck(b) {
 		return false, "Bit stuck"
 	}
 

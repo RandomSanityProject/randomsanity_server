@@ -59,7 +59,7 @@ func TestLooksRandom(t *testing.T) {
 		{"3939393939393939", false},
 		{"ff393939393939393939bb", false},
 
-		// stuck bits tests (need 64 bytes or more)
+		// stuck bits tests (need 64 bytes for one bit set)
 		{"136d3d153516244b2a366d7b401131523d453b701f4b7c6d39480710561b5e0a136d3d153516244b2a366d7b401131523d453b701f4b7c6d39480710561b5e0a", false}, // 0x80 bit unset
 		{"13adbd95b516248baa36ad3b8011b1123d053bb09f0b3c2db9080790961b1e0a13adbd95b516248baa36ad3b8011b1123d053bb09f0b3c2db9080790961b1e0a", false}, // 0x40 bit unset
 		{"13cd9d95951604cb8a16cd5bc01191521d451bd09f4b5c4d99480790d61b5e0a13cd9d95951604cb8a16cd5bc01191521d451bd09f4b5c4d99480790d61b5e0a", false}, // 0x20 bit unset
@@ -110,7 +110,6 @@ func TestLooksRandom(t *testing.T) {
 		{"4724b307af612288395831874016ede4f3ba2d41df40c3884f1ff1b9c05ac3", true},
 		{"13edbd95b51624cbaa36ed7bc011b1523d453bf09f4b7c6db9480790d61b5e0a", true},
 	}
-
 	for _, test := range tests {
 		b, err := hex.DecodeString(strings.Replace(test.hexbytes, " ", "", -1))
 		if err != nil {
