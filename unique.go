@@ -6,8 +6,8 @@ import (
 	"appengine"
 	"appengine/datastore"
 	"bytes"
-	"crypto/aes"
 	"crypto/rand"
+	"crypto/sha256"
 	"net/http"
 	"time"
 )
@@ -33,7 +33,7 @@ func looksUnique(ctx appengine.Context, w http.ResponseWriter, b []byte, uID str
 }
 
 //
-// Entities in the 'RB' datastore;
+// Entities in the 'RBH' datastore;
 // storing 16 "random we hope" bytes.
 //
 // First prefixBytes bytes are used as they key,
@@ -126,6 +126,13 @@ func dealWithMultiError(err error) error {
 	return err
 }
 
+// Given secret and data, return 16-byte hash
+func hash16(secret []byte, data []byte) []byte {
+	b := bytes.Join([][]byte{secret, data}, []byte{})
+	h := sha256.Sum224(b)
+	return h[0:16]
+}
+
 func unique(ctx appengine.Context, b []byte, uID string, tag string) (*RngUniqueBytesEntry, int, error) {
 	n := len(b) - 15 // Number of queries
 	keys := make([]*datastore.Key, n)
@@ -137,17 +144,12 @@ func unique(ctx appengine.Context, b []byte, uID string, tag string) (*RngUnique
 	if err != nil {
 		return nil, 0, err
 	}
-	cipher, err := aes.NewCipher(secret)
-	if err != nil {
-		return nil, 0, err
-	}
 
 	chunks := make([][]byte, n)
 	for i := 0; i < n; i++ {
-		chunks[i] = make([]byte, 16)
-		cipher.Encrypt(chunks[i], b[i:i+16])
+		chunks[i] = hash16(secret, b[i:i+16])
 
-		keys[i] = datastore.NewKey(ctx, "RB", "", 1+i64(chunks[i][0:prefixBytes]), nil)
+		keys[i] = datastore.NewKey(ctx, "RBH", "", 1+i64(chunks[i][0:prefixBytes]), nil)
 		vals[i] = new(RngUniqueBytes)
 	}
 	err = datastore.GetMulti(ctx, keys, vals)
@@ -160,9 +162,9 @@ func unique(ctx appengine.Context, b []byte, uID string, tag string) (*RngUnique
 		for _, h := range hit.Hits {
 			if bytes.Equal(h.Trailing, chunks[i][prefixBytes:]) {
 				// Rewriting keeps this entry from getting evicted
-				// and overwriting the userid/tag prevents the
+				// and overwriting the userid prevents the
 				// user from getting too many notifications
-				write(ctx, chunks[i][:], time.Now().Unix(), "", "")
+				write(ctx, chunks[i][:], time.Now().Unix(), "", h.Tag)
 				return &h, i, nil // ... full match!
 			}
 		}
@@ -182,7 +184,7 @@ func unique(ctx appengine.Context, b []byte, uID string, tag string) (*RngUnique
 func write(ctx appengine.Context, b []byte, t int64, uID string, tag string) error {
 	const maxEntriesPerKey = 100
 
-	key := datastore.NewKey(ctx, "RB", "", 1+i64(b[0:prefixBytes]), nil)
+	key := datastore.NewKey(ctx, "RBH", "", 1+i64(b[0:prefixBytes]), nil)
 
 	err := datastore.RunInTransaction(ctx, func(ctx appengine.Context) error {
 		hit := new(RngUniqueBytes)
