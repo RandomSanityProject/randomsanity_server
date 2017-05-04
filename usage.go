@@ -3,8 +3,10 @@ package randomsanity
 import (
 	"appengine"
 	"appengine/datastore"
+	"encoding/json"
 	"log"
 	"math/rand" // don't need cryptographically secure randomness here
+	"net/http"
 )
 
 // Keep track of usage stats
@@ -14,8 +16,8 @@ import (
 const SAMPLING_FACTOR = 1
 
 type UsageRecord struct {
-	Key string
-	N   int64 `datastore:",noindex"`
+	K string
+	N int64 `datastore:",noindex"`
 }
 
 func RecordUsage(ctx appengine.Context, k string, n int64) {
@@ -25,7 +27,7 @@ func RecordUsage(ctx appengine.Context, k string, n int64) {
 	key := datastore.NewKey(ctx, "UsageRecord", k, 0, nil)
 
 	err := datastore.RunInTransaction(ctx, func(ctx appengine.Context) error {
-		r := UsageRecord{Key: k, N: 0}
+		r := UsageRecord{K: k, N: 0}
 		err := datastore.Get(ctx, key, &r)
 		if err != nil && err != datastore.ErrNoSuchEntity {
 			return err
@@ -48,4 +50,16 @@ func GetUsage(ctx appengine.Context) []UsageRecord {
 		log.Printf("Datastore error: %s", err.Error())
 	}
 	return results
+}
+
+func usageHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	ctx := appengine.NewContext(r)
+	usage := GetUsage(ctx)
+	m := make(map[string]int64)
+	for _, rr := range usage {
+		m[rr.K] = rr.N
+	}
+	enc := json.NewEncoder(w)
+	enc.Encode(m)
 }
