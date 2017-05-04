@@ -138,7 +138,7 @@ func unique(ctx appengine.Context, b []byte, uID string, tag string) (*RngUnique
 	keys := make([]*datastore.Key, n)
 	vals := make([]*RngUniqueBytes, n)
 
-	// Input is first be run through AES-128 encryption, to prevent an attacker
+	// Input is first hashed with a secret, to prevent an attacker
 	// from intentionally causing database entry collisions.
 	secret, err := secretKey(ctx)
 	if err != nil {
